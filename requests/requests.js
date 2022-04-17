@@ -1,5 +1,6 @@
 import fetch from 'isomorphic-fetch';
 import { stringify } from 'querystring';
+import { strError } from '../util';
 
 async function requestCoinPrice(coinId) {
   const { COINMARKETCAP_TOKEN } = process.env;
@@ -16,16 +17,15 @@ async function requestCoinPrice(coinId) {
       },
     },
   ).catch((e) => {
-    console.log(e);
+    throw strError(e, 'Error in request');
   });
-  if (!response) throw new Error('Error in request');
 
   return response.json();
 }
 
 function parseCoinPrice(body) {
   const price = body?.data?.quote?.USD?.price;
-  if (price === undefined) throw new Error('Error in parsing');
+  if (price === undefined) throw strError(new Error('Error in parsing'), JSON.stringify(body));
 
   return `Current price: ${Number.parseFloat(price).toFixed(2)} usd`;
 }
