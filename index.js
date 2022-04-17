@@ -1,40 +1,19 @@
-import { Telegraf } from 'telegraf';
 import express from 'express';
-const { NODE_ENV, TELEGRAM_TOKEN, PORT } = process.env;
+import { Telegraf } from 'telegraf';
+import { setupBotActions, setupBotWebhook } from './bot';
+import { setupServerActions } from './server';
 
-if (TELEGRAM_TOKEN === undefined) throw new Error('TELEGRAM_TOKEN must be provided!');
+async function init() {
+  const { TELEGRAM_TOKEN } = process.env;
 
-const bot = new Telegraf(TELEGRAM_TOKEN);
+  const bot = new Telegraf(TELEGRAM_TOKEN);
+  const webhookSecretPath = `/${bot.secretPathComponent()}`;
 
-// if (NODE_ENV === 'production') {
-// }
-const secretPath = `/telegraf/${bot.secretPathComponent()}`;
+  await setupBotWebhook(bot, webhookSecretPath);
+  await setupBotActions(bot);
 
-// Set telegram webhook
-// npm install -g localtunnel && lt --port 3000
-bot.telegram.setWebhook(`https://----.localtunnel.me${secretPath}`);
+  const app = express();
+  setupServerActions(app, bot.webhookCallback(webhookSecretPath));
+}
 
-bot.start((ctx) => {
-  ctx.reply('0');
-});
-bot.command('gst', (ctx) => {
-  ctx.reply('1');
-});
-bot.on('text', async (ctx) => {
-  ctx.reply('2');
-});
-
-const app = express();
-const port = PORT || 3000;
-
-// app.use(express.json());
-
-app.get('/', (req, res) => res.send('Hello World!'));
-// Set the bot API endpoint
-app.use(bot.webhookCallback(secretPath));
-app.listen(port, () => {
-  console.log(`App listening on port ${port}`);
-});
-
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+init();
