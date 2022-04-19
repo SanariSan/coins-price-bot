@@ -44,9 +44,6 @@ function setupBotActions(bot) {
       ctx.reply(res);
     }
   });
-  bot.on('text', (ctx) => {
-    ctx.reply('Run command to get current coin price');
-  });
 }
 
 export { setupBotWebhook, setupBotActions };
