@@ -38,9 +38,7 @@ function setupBotActions(bot) {
 
   // restrict price request in pm with bot
   bot.use((ctx, next) => {
-    const { SELF_CHAT_ID } = process.env;
-
-    if (ctx.chat.id == SELF_CHAT_ID) return;
+    if (ctx.chat.type === 'private') return;
     return next();
   });
 
