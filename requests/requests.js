@@ -23,23 +23,23 @@ async function requestCoinPrice(coinId) {
   return response.json();
 }
 
-function parseCoinPrice(body) {
+function parseCoinPrice(body, coinName) {
   const price = body?.data?.quote?.USD?.price;
   if (price === undefined) throw strError(new Error('Error in parsing'), JSON.stringify(body));
 
-  return `Current price: ${Number.parseFloat(price).toFixed(2)} usd`;
+  return `Current ${coinName} price: ${Number.parseFloat(price).toFixed(2)} usd`;
 }
 
 function getGstRate() {
-  return requestCoinPrice('16352').then(parseCoinPrice);
+  return requestCoinPrice('16352').then((body) => parseCoinPrice(body, 'gst'));
 }
 
 function getGmtRate() {
-  return requestCoinPrice('18069').then(parseCoinPrice);
+  return requestCoinPrice('18069').then((body) => parseCoinPrice(body, 'gmt'));
 }
 
 function getSolRate() {
-  return requestCoinPrice('5426').then(parseCoinPrice);
+  return requestCoinPrice('5426').then((body) => parseCoinPrice(body, 'sol'));
 }
 
 export { getGstRate, getGmtRate, getSolRate };
