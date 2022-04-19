@@ -96,11 +96,7 @@ function setupBotActions(bot) {
   bot.use(async (ctx) => {
     const res = await ctx.res;
 
-    if (res) {
-      ctx.reply(res).catch((e) => log(e));
-    } else {
-      ctx.reply('Try again later').catch((e) => log(e));
-    }
+    if (res) ctx.reply(res).catch((e) => log(e));
   });
 }
 
