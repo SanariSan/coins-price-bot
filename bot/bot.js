@@ -46,13 +46,18 @@ function setupBotActions(bot) {
   bot.use((ctx, next) => {
     if (!(ctx.chat.id in chats)) {
       chats[ctx.chat.id] = getInitChatTimestamps(timeout);
-      log(ctx.chat.id);
+
+      log('New chat');
+      log(ctx?.message?.chat);
     }
+
     return next();
   });
 
   bot.command('gst', async (ctx, next) => {
     await ctx.tg.deleteMessage(ctx.chat.id, ctx.message.message_id);
+
+    log(ctx?.message);
 
     const nowLocal = Date.now();
     if (nowLocal - timeout < chats[ctx.chat.id].gst) return;
@@ -67,6 +72,8 @@ function setupBotActions(bot) {
   bot.command('gmt', async (ctx, next) => {
     await ctx.tg.deleteMessage(ctx.chat.id, ctx.message.message_id);
 
+    log(ctx?.message);
+
     const nowLocal = Date.now();
     if (nowLocal - timeout < chats[ctx.chat.id].gmt) return;
     chats[ctx.chat.id].gmt = nowLocal;
@@ -79,6 +86,8 @@ function setupBotActions(bot) {
 
   bot.command('sol', async (ctx, next) => {
     await ctx.tg.deleteMessage(ctx.chat.id, ctx.message.message_id);
+
+    log(ctx?.message);
 
     const nowLocal = Date.now();
     if (nowLocal - timeout < chats[ctx.chat.id].sol) return;
@@ -94,7 +103,10 @@ function setupBotActions(bot) {
   bot.use(async (ctx) => {
     const res = await ctx.res;
 
-    if (res) ctx.reply(res).catch((e) => log(e));
+    if (res) {
+      log('\n-\n');
+      ctx.reply(res).catch((e) => log(e));
+    }
   });
 }
 
