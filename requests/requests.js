@@ -1,6 +1,6 @@
 import fetch from 'isomorphic-fetch';
 import { stringify } from 'querystring';
-import { strError } from '../util';
+import { dir, strError } from '../util';
 
 async function requestCoinPrice(coinId) {
   const { COINMARKETCAP_TOKEN } = process.env;
@@ -9,6 +9,7 @@ async function requestCoinPrice(coinId) {
     `https://pro-api.coinmarketcap.com/v2/tools/price-conversion?${stringify({
       amount: 1,
       id: coinId,
+      // symbol,
       convert: 'USD',
     })}`,
     {
@@ -30,8 +31,12 @@ function parseCoinPrice(body, coinName) {
   return `Current ${coinName} price: ${Number.parseFloat(price).toFixed(2)} usd`;
 }
 
-function getGstRate() {
-  return requestCoinPrice('16352').then((body) => parseCoinPrice(body, 'gst'));
+function getGstSolRate() {
+  return requestCoinPrice('16352').then((body) => parseCoinPrice(body, 'gst (SOL)'));
+}
+
+function getGstBscRate() {
+  return requestCoinPrice('20236').then((body) => parseCoinPrice(body, 'gst (BSC)'));
 }
 
 function getGmtRate() {
@@ -42,4 +47,17 @@ function getSolRate() {
   return requestCoinPrice('5426').then((body) => parseCoinPrice(body, 'sol'));
 }
 
-export { getGstRate, getGmtRate, getSolRate };
+// function getAllCoinsRate() {
+//   // return getStoredCoinsPrice();
+//   return requestCoinPrice(undefined, 'GST').then((body) => parseCoinPrice(body, 'sol'));
+// }
+
+// function startPollingPrices() {}
+
+export {
+  getGstSolRate,
+  getGstBscRate,
+  getGmtRate,
+  getSolRate,
+  //getAllCoinsRate
+};

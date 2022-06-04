@@ -1,6 +1,7 @@
 import localtunnel from 'localtunnel';
-import { getGmtRate, getGstRate, getSolRate } from '../requests';
+import { getGmtRate, getGstSolRate, getGstBscRate, getSolRate } from '../requests';
 import { dir, log } from '../util';
+import { appendFile } from 'fs/promises';
 
 async function setupBotWebhook(bot, webhookSecretPath) {
   const { NODE_ENV, APP_NAME, PORT } = process.env;
@@ -9,7 +10,9 @@ async function setupBotWebhook(bot, webhookSecretPath) {
   if (NODE_ENV === 'production') {
     webhookURL = `https://${APP_NAME}.herokuapp.com${webhookSecretPath}`;
   } else {
-    const tunnel = await localtunnel({ port: PORT });
+    const tunnel = await localtunnel({ port: PORT }).catch((e) => {
+      console.log(e);
+    });
     webhookURL = `${tunnel.url}${webhookSecretPath}`;
   }
 
@@ -19,7 +22,8 @@ async function setupBotWebhook(bot, webhookSecretPath) {
 function getInitChatTimestamps(timeout) {
   const initTime = Date.now() - timeout;
   const ts = {
-    gst: initTime,
+    gst_sol: initTime,
+    gst_bsc: initTime,
     gmt: initTime,
     sol: initTime,
   };
@@ -54,25 +58,33 @@ function setupBotActions(bot) {
     return next();
   });
 
-  bot.command('gst', async (ctx, next) => {
+  bot.command('gst_sol', async (ctx, next) => {
     await ctx.tg.deleteMessage(ctx.chat.id, ctx.message.message_id);
 
-    log(ctx?.message);
+    const nowLocal = Date.now();
+    if (nowLocal - timeout < chats[ctx.chat.id].gst_sol) return;
+    chats[ctx.chat.id].gst_sol = nowLocal;
+
+    ctx.res = getGstSolRate().catch((e) => log(e));
+    // ctx.res = Promise.resolve().then(() => 'Current gst price: 4.49 usd');
+
+    return next();
+  });
+
+  bot.command('gst_bsc', async (ctx, next) => {
+    await ctx.tg.deleteMessage(ctx.chat.id, ctx.message.message_id);
 
     const nowLocal = Date.now();
-    if (nowLocal - timeout < chats[ctx.chat.id].gst) return;
-    chats[ctx.chat.id].gst = nowLocal;
+    if (nowLocal - timeout < chats[ctx.chat.id].gst_bsc) return;
+    chats[ctx.chat.id].gst_bsc = nowLocal;
 
-    ctx.res = getGstRate().catch((e) => log(e));
-    // ctx.res = Promise.resolve().then(() => 'Current gst price: 4.49 usd');
+    ctx.res = getGstBscRate().catch((e) => log(e));
 
     return next();
   });
 
   bot.command('gmt', async (ctx, next) => {
     await ctx.tg.deleteMessage(ctx.chat.id, ctx.message.message_id);
-
-    log(ctx?.message);
 
     const nowLocal = Date.now();
     if (nowLocal - timeout < chats[ctx.chat.id].gmt) return;
@@ -87,14 +99,39 @@ function setupBotActions(bot) {
   bot.command('sol', async (ctx, next) => {
     await ctx.tg.deleteMessage(ctx.chat.id, ctx.message.message_id);
 
-    log(ctx?.message);
-
     const nowLocal = Date.now();
     if (nowLocal - timeout < chats[ctx.chat.id].sol) return;
     chats[ctx.chat.id].sol = nowLocal;
 
     ctx.res = getSolRate().catch((e) => log(e));
     // ctx.res = Promise.resolve().then(() => 'Current sol price: 106.44 usd');
+
+    return next();
+  });
+
+  bot.on('text', async (ctx, next) => {
+    const { NODE_ENV } = process.env;
+
+    if (NODE_ENV === 'development') {
+      await appendFile('./messages.log', `${new Date()} | ${JSON.stringify(ctx?.message)}\n`).catch(
+        () => {},
+      );
+    }
+
+    if (
+      ctx?.message?.text &&
+      (~ctx.message.text.toLowerCase().indexOf('бесплатные кроссовки') ||
+        ~ctx.message.text.toLowerCase().indexOf('первые 100') ||
+        ctx.message.from.first_name === 'Stepn')
+    ) {
+      log(ctx?.message);
+      log(ctx.message.from.id);
+
+      await ctx.tg.deleteMessage(ctx.chat.id, ctx.message.message_id).catch(() => {});
+      // await ctx.tg.banChatMember(ctx.chat.id, ctx.message.from.id).catch((e) => {
+      //   console.log(e);
+      // });
+    }
 
     return next();
   });
